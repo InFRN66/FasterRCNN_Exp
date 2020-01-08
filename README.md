@@ -13,11 +13,11 @@ Remove 'build', 'faster_rcnn.egg-info' in `lib`, and remove '_C.cpython-36m-x86_
 ## ImageNet accuracy with pretrained models in pytorch
 | Backbone | Acc@1 | Acc@5 |
 | -------- | ----- | ----- |
-| vgg13 | | |
-| vgg16 | | |
-| vgg19 | | |
-| resnet18 | | |
-| resnet34 | | |
-| resnet50 | | |
-| resnet101 | | |
-| resnet152 | | |
+| vgg13 | 69.923 | 89.246 |
+| vgg16 | 71.592 | 90.382 |
+| vgg19 | 72.376 | 90.876 |
+| resnet18 | 69.758 | 89.078 |
+| resnet34 | 73.314 | 91.420 |
+| resnet50 | 76.130 | 92.862 |
+| resnet101 | 77.374 | 93.546 |
+| resnet152 | 78.312 | 94.046 |
