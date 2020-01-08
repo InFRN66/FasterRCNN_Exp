@@ -12,6 +12,7 @@ Remove 'build', 'faster_rcnn.egg-info' in `lib`, and remove '_C.cpython-36m-x86_
 
 ## ImageNet accuracy with pretrained models in pytorch
 Evaluation results for ImageNet validation split (5000 images). 
+
 | Backbone | Acc@1 | Acc@5 |
 | -------- | ----- | ----- |
 | vgg13 | 69.923 | 89.246 |
