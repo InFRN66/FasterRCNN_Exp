@@ -36,6 +36,7 @@ from model.faster_rcnn.resnet import resnet
 from model.faster_rcnn.densenet import densenet
 from model.faster_rcnn.senet.se_resnet import se_resnet
 from model.faster_rcnn.resnext import resnext
+from model.faster_rcnn.mobilenet import mobilenet
 
 
 def to_list(argument):
@@ -299,6 +300,9 @@ if __name__ == '__main__':
     fasterRCNN = resnext(imdb.classes, 50, pretrained=pretrained, class_agnostic=args.class_agnostic, imagenet_weight=args.imagenet_weight)
   elif args.net == 'resnext101':
     fasterRCNN = resnext(imdb.classes, 101, pretrained=pretrained, class_agnostic=args.class_agnostic, imagenet_weight=args.imagenet_weight)
+
+  elif args.net == 'mobilenet_v2':
+    fasterRCNN = mobilenet(imdb.classes, 'v2', pretrained=pretrained, class_agnostic=args.class_agnostic, imagenet_weight=args.imagenet_weight)
 
   else:
     print("network is not defined")

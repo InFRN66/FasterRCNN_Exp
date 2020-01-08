@@ -49,7 +49,7 @@ def resnext101(pretrained=False, imagenet_weight=False):
     pretrained (bool): If True, returns a model pre-trained on ImageNet
   """
   print('=== Using resnet 101_32x8d ===')
-  model = models.models.resnext101_32x8d()
+  model = models.resnext101_32x8d()
   if pretrained:
     if imagenet_weight:
       print('=== use {} as backbone'.format(imagenet_weight))
