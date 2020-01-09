@@ -11,7 +11,7 @@ Remove 'build', 'faster_rcnn.egg-info' in `lib`, and remove '_C.cpython-~.so' in
 - `mkdir data && cd data && ln -s [coco_source_dir] coco`
 
 ## ImageNet accuracy with pretrained models in pytorch
-Evaluation results for ImageNet validation split (5000 images). 
+Evaluation results for ImageNet validation split. 
 
 | Backbone | Acc@1 | Acc@5 |
 | -------- | ----- | ----- |
