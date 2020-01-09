@@ -6,7 +6,7 @@ Training and validation for [faster-rcnn](https://arxiv.org/abs/1506.01497).
 - torch >= 1.1
 - torchvision >= 0.3
 
-Remove 'build', 'faster_rcnn.egg-info' in `lib`, and remove '_C.cpython-36m-x86_64-linux-gnu.so' in `lib/model` (if any)
+Remove 'build', 'faster_rcnn.egg-info' in `lib`, and remove '_C.cpython-~.so' in `lib/model` (if any)
 - `cd lib && python setup.py build develop`
 - `mkdir data && cd data && ln -s [coco_source_dir] coco`
 
@@ -23,3 +23,9 @@ Evaluation results for ImageNet validation split (5000 images).
 | resnet50 | 76.130 | 92.862 |
 | resnet101 | 77.374 | 93.546 |
 | resnet152 | 78.312 | 94.046 |
+| densenet121 | 74.434 | 91.972 |
+| densenet161 | 77.138 | 93.560 |
+| densenet169 | 75.600 | 92.806 |
+| densenet201 | 76.896 | 93.370 |
+| resnext50_32x4d | 77.618 | 93.698 |
+| resnext101_32x8d | 79.312 | 94.526 |
