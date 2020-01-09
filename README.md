@@ -33,4 +33,5 @@ Evaluation results for ImageNet validation split (5000 images).
 | resnext50_32x4d | 77.618 | 93.698 |
 | resnext101_32x8d | 79.312 | 94.526 |
 | mobilenet_v2 | 71.878 | 90.286 |
-
+| shufflenet_v2_x0_5 | 60.552 | 81.746 |
+| shufflenet_v2_x1_0 | 69.362 | 88.316 |
