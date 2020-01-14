@@ -35,6 +35,9 @@ from model.utils.net_utils import save_net, load_net, vis_detections
 from model.faster_rcnn.vgg import vgg
 from model.faster_rcnn.resnet import resnet
 from model.faster_rcnn.densenet import densenet
+from model.faster_rcnn.senet.se_resnet import se_resnet
+from model.faster_rcnn.resnext import resnext
+from model.faster_rcnn.mobilenet import mobilenet
 
 try:
     xrange          # Python 2
@@ -229,7 +232,10 @@ if __name__ == '__main__':
   elif args.net == 'se_resnet101':
     fasterRCNN = se_resnet(imdb.classes, 101, pretrained=pretrained, class_agnostic=args.class_agnostic)
   elif args.net == 'se_resnet152':
-    fasterRCNN = se_resnet(imdb.classes, 152, pretrained=pretrained, class_agnostic=args.class_agnostic)
+    fasterRCNN = se_resnet(imdb.classes, 152, pretrained=pretrained, class_agnostic=args.class_agnostic)\
+
+  elif args.net == 'mobilenet_v2':
+    fasterRCNN = mobilenet(imdb.classes, 'v2', pretrained=pretrained, class_agnostic=args.class_agnostic)
 
   else:
     print("network is not defined")
@@ -397,7 +403,7 @@ if __name__ == '__main__':
       pickle.dump(all_boxes, f, pickle.HIGHEST_PROTOCOL)
 
   print('Evaluating detections')
-  imdb.evaluate_detections(all_boxes, output_dir) # voc
+  imdb.evaluate_detections(all_boxes, output_dir, args.result_file) # voc
   # imdb.evaluate_detections(all_boxes, output_dir, args.dataset, imagenet_weight_epoch, args.result_file) # coco
 
   end = time.time()

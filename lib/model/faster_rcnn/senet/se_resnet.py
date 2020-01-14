@@ -274,60 +274,6 @@ def se_resnet152(pretrained=False, imagenet_weight=False):
             model.load_state_dict(state_dict)
     return model
 
-# def se_resnet18(num_classes=1000):
-#     """Constructs a ResNet-18 model.
-#     Args:
-#         pretrained (bool): If True, returns a model pre-trained on ImageNet
-#     """
-#     model = ResNet(SEBasicBlock, [2, 2, 2, 2], num_classes=num_classes)
-#     model.avgpool = nn.AdaptiveAvgPool2d(1)
-#     return model
-
-
-# def se_resnet34(num_classes=1000):
-#     """Constructs a ResNet-34 model.
-#     Args:
-#         pretrained (bool): If True, returns a model pre-trained on ImageNet
-#     """
-#     model = ResNet(SEBasicBlock, [3, 4, 6, 3], num_classes=num_classes)
-#     model.avgpool = nn.AdaptiveAvgPool2d(1)
-#     return model
-
-
-# def se_resnet50(num_classes=1000, pretrained=False):
-#     """Constructs a ResNet-50 model.
-#     Args:
-#         pretrained (bool): If True, returns a model pre-trained on ImageNet
-#     """
-#     model = ResNet(SEBottleneck, [3, 4, 6, 3], num_classes=num_classes)
-#     model.avgpool = nn.AdaptiveAvgPool2d(1)
-#     if pretrained:
-#         model.load_state_dict(load_state_dict_from_url(
-#             "https://github.com/moskomule/senet.pytorch/releases/download/archive/seresnet50-60a8950a85b2b.pkl"))
-#     return model
-
-
-# def se_resnet101(num_classes=1000):
-#     """Constructs a ResNet-101 model.
-
-#     Args:
-#         pretrained (bool): If True, returns a model pre-trained on ImageNet
-#     """
-#     model = ResNet(SEBottleneck, [3, 4, 23, 3], num_classes=num_classes)
-#     model.avgpool = nn.AdaptiveAvgPool2d(1)
-#     return model
-
-
-# def se_resnet152(num_classes=1000):
-#     """Constructs a ResNet-152 model.
-
-#     Args:
-#         pretrained (bool): If True, returns a model pre-trained on ImageNet
-#     """
-#     model = ResNet(SEBottleneck, [3, 8, 36, 3], num_classes=num_classes)
-#     model.avgpool = nn.AdaptiveAvgPool2d(1)
-#     return model
-
 
 class se_resnet(_fasterRCNN):
   def __init__(self, classes, num_layers, pretrained=False, class_agnostic=False, imagenet_weight=None):

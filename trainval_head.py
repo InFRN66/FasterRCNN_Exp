@@ -376,7 +376,6 @@ if __name__ == '__main__':
   if args.use_tfboard:
     from tensorboardX import SummaryWriter
     tflogdir = "logs/{}/{}/{}".format(args.net, args.head_train_types, imagenet_weight_epoch)
-    # tflogdir = "logs/{}/{}/{}".format('test', args.head_train_types, imagenet_weight_epoch)
     os.makedirs(tflogdir, exist_ok=True)
     logger = SummaryWriter(tflogdir)
 

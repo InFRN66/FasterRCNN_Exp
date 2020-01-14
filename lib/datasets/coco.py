@@ -13,6 +13,7 @@ from model.utils.config import cfg
 import os.path as osp
 import sys
 import os
+from pathlib import Path
 import numpy as np
 import scipy.sparse
 import scipy.io as sio
@@ -218,7 +219,7 @@ class coco(imdb):
                  '_' + str(index).zfill(12) + '.mat')
     return osp.join(file_name[:14], file_name[:22], file_name)
 
-  def _print_detection_eval_metrics(self, coco_eval):
+  def _print_detection_eval_metrics(self, coco_eval, result_file):
     IoU_lo_thresh = 0.5
     IoU_hi_thresh = 0.95
 
@@ -248,17 +249,21 @@ class coco(imdb):
       ap = np.mean(precision[precision > -1])
       print('{:.1f}'.format(100 * ap))
 
+    os.makedirs(Path(result_file).parent, exist_ok=True) 
     print('~~~~ Summary metrics ~~~~')
+    sys.stdout = open(result_file, 'w')
     coco_eval.summarize()
+    sys.stdout.close()
+    sys.stdout = sys.__stdout__
 
-  def _do_detection_eval(self, res_file, output_dir):
+  def _do_detection_eval(self, res_file, output_dir, result_file):
     ann_type = 'bbox'
     coco_dt = self._COCO.loadRes(res_file)
     coco_eval = COCOeval(self._COCO, coco_dt)
     coco_eval.params.useSegm = (ann_type == 'segm')
     coco_eval.evaluate()
     coco_eval.accumulate()
-    self._print_detection_eval_metrics(coco_eval)
+    self._print_detection_eval_metrics(coco_eval, result_file)
     eval_file = osp.join(output_dir, 'detection_results.pkl')
     with open(eval_file, 'wb') as fid:
       pickle.dump(coco_eval, fid, pickle.HIGHEST_PROTOCOL)
@@ -300,7 +305,7 @@ class coco(imdb):
     with open(res_file, 'w') as fid:
       json.dump(results, fid)
 
-  def evaluate_detections(self, all_boxes, output_dir):
+  def evaluate_detections(self, all_boxes, output_dir, result_file):
     res_file = osp.join(output_dir, ('detections_' +
                                      self._image_set +
                                      self._year +
@@ -311,7 +316,7 @@ class coco(imdb):
     self._write_coco_results_file(all_boxes, res_file)
     # Only do evaluation on non-test sets
     if self._image_set.find('test') == -1:
-      self._do_detection_eval(res_file, output_dir)
+      self._do_detection_eval(res_file, output_dir, result_file)
     # Optionally cleanup results json file
     if self.config['cleanup']:
       os.remove(res_file)
