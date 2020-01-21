@@ -250,6 +250,23 @@ __C.MOBILENET.WEIGHT_DECAY = 0.00004
 # Depth multiplier
 __C.MOBILENET.DEPTH_MULTIPLIER = 1.
 
+
+#
+# ShuffleNet options
+#
+
+__C.SHUFFLENET = edict()
+
+__C.SHUFFLENET.FIXED_BLOCKS = 1
+
+# Whether to regularize the depth-wise filters during training
+__C.SHUFFLENET.REGU_DEPTH = False
+
+# Number of fixed layers during training, by default the first of all 14 layers is fixed
+# Range: 0 (none) to 12 (all)
+__C.SHUFFLENET.FIXED_LAYERS = 5
+
+
 #
 # MISC
 #
