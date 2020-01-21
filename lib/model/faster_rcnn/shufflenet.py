@@ -144,7 +144,7 @@ class shufflenet(_fasterRCNN):
             # Set fixed blocks to be in eval mode
             self.RCNN_base.eval()
             print('train {}to{}'.format(
-                cfg.SHUFFLENET.FIXED_BLOCKS+4, len(self.RCNN_base)))
+                cfg.SHUFFLENET.FIXED_BLOCKS+3, len(self.RCNN_base)))
             for i in range(cfg.SHUFFLENET.FIXED_BLOCKS+4, len(self.RCNN_base)):  # 1->5-, 2->6-
                 self.RCNN_base[i].train()
 
