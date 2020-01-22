@@ -38,6 +38,7 @@ from model.faster_rcnn.densenet import densenet
 from model.faster_rcnn.senet.se_resnet import se_resnet
 from model.faster_rcnn.resnext import resnext
 from model.faster_rcnn.mobilenet import mobilenet
+from model.faster_rcnn.shufflenet import shufflenet
 
 try:
     xrange          # Python 2
@@ -236,6 +237,11 @@ if __name__ == '__main__':
 
   elif args.net == 'mobilenet_v2':
     fasterRCNN = mobilenet(imdb.classes, 'v2', pretrained=pretrained, class_agnostic=args.class_agnostic)
+
+  elif args.net == 'shufflenet_x05':
+    fasterRCNN = shufflenet(imdb.classes, 'x05', pretrained=pretrained, class_agnostic=args.class_agnostic)
+  elif args.net == 'shufflenet_x10':
+    fasterRCNN = shufflenet(imdb.classes, 'x10', pretrained=pretrained, class_agnostic=args.class_agnostic)
 
   else:
     print("network is not defined")

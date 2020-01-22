@@ -391,6 +391,10 @@ if __name__ == '__main__':
   for epoch in range(args.start_epoch+1, args.max_epochs+1):
     # setting to train mode
     fasterRCNN.train()
+    
+    # import pdb 
+    # pdb.set_trace()
+    
     loss_temp = 0
     start = time.time()
 

@@ -127,15 +127,15 @@ class shufflenet(_fasterRCNN):
                 p.requires_grad = False
         # ==== === ====
 
-        def set_bn_fix(m):
-            classname = m.__class__.__name__
-            if classname.find('BatchNorm') != -1:
-                for p in m.parameters():
-                    p.requires_grad = False
+        # def set_bn_fix(m):
+        #     classname = m.__class__.__name__
+        #     if classname.find('BatchNorm') != -1:
+        #         for p in m.parameters():
+        #             p.requires_grad = False
 
-        # === fix weight
-        self.RCNN_base.apply(set_bn_fix)
-        self.RCNN_top.apply(set_bn_fix)
+        # # === fix weight
+        # self.RCNN_base.apply(set_bn_fix)
+        # self.RCNN_top.apply(set_bn_fix)
 
     def train(self, mode=True):
         # Override train so that the training mode is set as we want
@@ -144,17 +144,17 @@ class shufflenet(_fasterRCNN):
             # Set fixed blocks to be in eval mode
             self.RCNN_base.eval()
             print('train {}to{}'.format(
-                cfg.SHUFFLENET.FIXED_BLOCKS+3, len(self.RCNN_base)))
-            for i in range(cfg.SHUFFLENET.FIXED_BLOCKS+4, len(self.RCNN_base)):  # 1->5-, 2->6-
+                cfg.SHUFFLENET.FIXED_BLOCKS+2, len(self.RCNN_base)-1))
+            for i in range(cfg.SHUFFLENET.FIXED_BLOCKS+2, len(self.RCNN_base)):  # 1->5-, 2->6-
                 self.RCNN_base[i].train()
 
-            def set_bn_eval(m):
-                classname = m.__class__.__name__
-                if classname.find('BatchNorm') != -1:
-                    m.eval()
+            # def set_bn_eval(m):
+            #     classname = m.__class__.__name__
+            #     if classname.find('BatchNorm') != -1:
+            #         m.eval()
 
-            self.RCNN_base.apply(set_bn_eval)
-            self.RCNN_top.apply(set_bn_eval)
+            # self.RCNN_base.apply(set_bn_eval)
+            # self.RCNN_top.apply(set_bn_eval)
 
     def _head_to_tail(self, pool5): # [b*256, 612 7, 7] -> [b*256, 4096]
         # print('head_to_tail: {}'.format(pool5.shape))
