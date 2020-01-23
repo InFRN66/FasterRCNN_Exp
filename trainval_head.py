@@ -38,6 +38,7 @@ from model.faster_rcnn.senet.se_resnet import se_resnet
 from model.faster_rcnn.resnext import resnext
 from model.faster_rcnn.mobilenet import mobilenet
 from model.faster_rcnn.shufflenet import shufflenet
+from model.faster_rcnn.squeezenet import squeezenet
 
 
 def to_list(argument):
@@ -310,6 +311,12 @@ if __name__ == '__main__':
   elif args.net == 'shufflenet_x10':
     fasterRCNN = shufflenet(imdb.classes, 'x10', pretrained=pretrained, class_agnostic=args.class_agnostic, imagenet_weight=args.imagenet_weight)
 
+  elif args.net == 'squeezenet_10':
+    fasterRCNN = squeezenet(imdb.classes, '10', pretrained=pretrained, class_agnostic=args.class_agnostic, imagenet_weight=args.imagenet_weight)
+  elif args.net == 'squeezenet_11':
+    fasterRCNN = squeezenet(imdb.classes, '11', pretrained=pretrained, class_agnostic=args.class_agnostic, imagenet_weight=args.imagenet_weight)
+
+
   else:
     print("network is not defined")
     pdb.set_trace()
@@ -391,9 +398,6 @@ if __name__ == '__main__':
   for epoch in range(args.start_epoch+1, args.max_epochs+1):
     # setting to train mode
     fasterRCNN.train()
-    
-    # import pdb 
-    # pdb.set_trace()
     
     loss_temp = 0
     start = time.time()
