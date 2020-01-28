@@ -6,7 +6,7 @@ import glob
 import matplotlib.pyplot as plt
 
 
-def data_extraction_clf(net, path_prefix='examples/imagenet/val'):
+def data_extraction_clf(net, path_prefix='../../examples/imagenet/val'):
     path = os.path.join(path_prefix, net+'_val')
     if not os.path.isfile(path):
         return -1
@@ -60,6 +60,8 @@ def data_plot(result, pdir_det, clf_score='acc1'):
         y = DET[0].AP # IOU=0.5:0.95
         plt.scatter(x[clf_score], y, label=net, marker=label_def(net))
     plt.legend()
+    plt.xlim(50, 100)
+    plt.ylim(0, 0.5)
     plt.xlabel('{}'.format(clf_score))
     plt.ylabel('AP ({})'.format(DET[0].range))
     plt.grid()
@@ -67,9 +69,8 @@ def data_plot(result, pdir_det, clf_score='acc1'):
         plt.title('train_all')
     elif pdir_det.find('fixed_base'):
         plt.title('fixed_base')
-    
-    plt.xlim(50, 100)
-    plt.ylim(0, 0.5)
+    plt.show()
+
 
 
 def main(nlist=None, pdir_clf=None, pdir_det=None):
@@ -93,5 +94,5 @@ def main(nlist=None, pdir_clf=None, pdir_det=None):
 
 
 if __name__ == '__main__':
-    main(pdir_clf='examples/imagenet/val', pdir_det='output/ImgNet_pre/train_all')
+    main(pdir_clf='../../examples/imagenet/val', pdir_det='output/ImgNet_pre/train_all')
     

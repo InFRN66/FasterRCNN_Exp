@@ -300,7 +300,7 @@ if __name__ == '__main__':
 
   elif args.net == 'resnext50':
     fasterRCNN = resnext(imdb.classes, 50, pretrained=pretrained, class_agnostic=args.class_agnostic, imagenet_weight=args.imagenet_weight)
-  elif args.net == 'resnext101':
+  elif args.net == 'resnext101_32x8d':
     fasterRCNN = resnext(imdb.classes, 101, pretrained=pretrained, class_agnostic=args.class_agnostic, imagenet_weight=args.imagenet_weight)
 
   elif args.net == 'mobilenet_v2':

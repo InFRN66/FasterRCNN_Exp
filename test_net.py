@@ -236,6 +236,11 @@ if __name__ == '__main__':
   elif args.net == 'se_resnet152':
     fasterRCNN = se_resnet(imdb.classes, 152, pretrained=pretrained, class_agnostic=args.class_agnostic)\
 
+  elif args.net == 'resnext50':
+    fasterRCNN = resnext(imdb.classes, 50, pretrained=pretrained, class_agnostic=args.class_agnostic)
+  elif args.net == 'resnext101':
+    fasterRCNN = resnext(imdb.classes, 101, pretrained=pretrained, class_agnostic=args.class_agnostic)
+  
   elif args.net == 'mobilenet_v2':
     fasterRCNN = mobilenet(imdb.classes, 'v2', pretrained=pretrained, class_agnostic=args.class_agnostic)
 
