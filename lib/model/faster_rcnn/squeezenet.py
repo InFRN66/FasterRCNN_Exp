@@ -115,7 +115,10 @@ class squeezenet(_fasterRCNN):
     def _head_to_tail(self, pool5):
         # print('head_to_tail: {}'.format(pool5.shape))
         fc7 = self.RCNN_top(pool5)
-        fc7 = F.adaptive_avg_pool2d(F.relu(fc7), 1).mean(3).mean(2)
+        # --- follow original net, relu+avgpool
+        # fc7 = F.adaptive_avg_pool2d(F.relu(fc7), 1).mean(3).mean(2)
+        # --- just mean
+        fc7 = fc7.mean(3).mean(2)
         # print('fc7: {}'.format(fc7.shape))
         return fc7
 
