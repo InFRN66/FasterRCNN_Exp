@@ -13,8 +13,8 @@ def data_extraction_clf(net, path_prefix='../../examples/imagenet/val'):
     with open(path, 'r') as f:
         data = f.readline().split(',')
         score = namedtuple('result', ['acc1', 'acc5'])
-        score.acc1 = float(data[0].strip())
-        score.acc5 = float(data[1].strip())
+        score.acc1 = float(data[0].strip())*0.01
+        score.acc5 = float(data[1].strip())*0.01
     return score
 
 
@@ -49,7 +49,7 @@ def data_plot(result, pdir_det, clf_score='acc1'):
         elif net.startswith('shuffle'):
             return '+'
         elif net.startswith('mobile'):
-            return '^'
+            return '_'
        
     plt.figure(figsize=(10,6))
     for net in result.keys():
@@ -58,9 +58,9 @@ def data_plot(result, pdir_det, clf_score='acc1'):
         DET = data.det
         x = {'acc1': CLF.acc1, 'acc5': CLF.acc5}        
         y = DET[0].AP # IOU=0.5:0.95
-        plt.scatter(x[clf_score], y, label=net, marker=label_def(net))
+        plt.scatter(x[clf_score], y, label=net, marker=label_def(net), s=100, alpha=0.5)
     plt.legend()
-    plt.xlim(50, 100)
+    plt.xlim(0.5, 1)
     plt.ylim(0, 0.5)
     plt.xlabel('{}'.format(clf_score))
     plt.ylabel('AP ({})'.format(DET[0].range))
