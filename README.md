@@ -20,7 +20,7 @@ Evaluation results for ImageNet validation split.
 | vgg19 | 72.376 | 90.876 | 0.243|
 | resnet18 | 69.758 | 89.078 ||
 | resnet34 | 73.314 | 91.420 ||
-| resnet50 | 76.130 | 92.862 ||
+| resnet50 | 76.130 | 92.862 | 0.312 |
 | resnet101 | 77.374 | 93.546 | 0.338 |
 | resnet152 | 78.312 | 94.046 | 0.334 |
 | densenet121 | 74.434 | 91.972 ||
