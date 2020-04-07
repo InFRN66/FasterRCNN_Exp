@@ -142,8 +142,6 @@ class vgg(_fasterRCNN):
     for layer in range(10):
       for p in self.RCNN_base[layer].parameters(): p.requires_grad = False
 
-    # self.RCNN_base = _RCNN_base(vgg.features, self.classes, self.dout_base_model)
-
     self.RCNN_top = vgg.classifier
 
     # not using the last maxpool layer

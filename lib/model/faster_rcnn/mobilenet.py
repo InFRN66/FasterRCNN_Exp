@@ -25,7 +25,6 @@ dout_base_model = {
     'v3': None,
 }
 
-
 class MobileNet_v1(nn.Module):
     def __init__(self):
         super(MobileNet_v1, self).__init__()
@@ -144,8 +143,6 @@ class mobilenet(_fasterRCNN):
         # # Fix some conv layers:
         # for layer in range(3):
         #   for p in self.RCNN_base[layer].parameters(): p.requires_grad = False
-
-        # self.RCNN_base = _RCNN_base(mbnet.features, self.classes, self.dout_base_model)
 
         self.RCNN_top = mbnet.classifier
 

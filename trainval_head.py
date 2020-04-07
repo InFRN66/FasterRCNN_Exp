@@ -21,6 +21,7 @@ import torch
 from torch.autograd import Variable
 import torch.nn as nn
 import torch.optim as optim
+from torch.autograd import gradcheck
 
 import torchvision.transforms as transforms
 from torch.utils.data.sampler import Sampler
@@ -210,7 +211,6 @@ if __name__ == '__main__':
     cfg_from_list(args.set_cfgs)
 
   print('Using config:')
-  # pprint.pprint(cfg)
   np.random.seed(cfg.RNG_SEED)
 
   #torch.backends.cudnn.benchmark = True
@@ -298,7 +298,7 @@ if __name__ == '__main__':
   elif args.net == 'se_resnet152':
     fasterRCNN = se_resnet(imdb.classes, 152, pretrained=pretrained, class_agnostic=args.class_agnostic, imagenet_weight=args.imagenet_weight)
 
-  elif args.net == 'resnext50':
+  elif args.net == 'resnext50_32x4d':
     fasterRCNN = resnext(imdb.classes, 50, pretrained=pretrained, class_agnostic=args.class_agnostic, imagenet_weight=args.imagenet_weight)
   elif args.net == 'resnext101_32x8d':
     fasterRCNN = resnext(imdb.classes, 101, pretrained=pretrained, class_agnostic=args.class_agnostic, imagenet_weight=args.imagenet_weight)
@@ -323,8 +323,14 @@ if __name__ == '__main__':
 
   fasterRCNN.create_architecture()
 
-  # import pdb
-  # pdb.set_trace()  
+  # [check gradient]
+  # # vgg16
+  # fasterRCNN.RCNN_base[28].weight.register_hook(lambda grad: print('grad: last_conv\n{}'.format(grad[:3,:3,:3,:3])))
+  # fasterRCNN.RCNN_cls_score.weight.register_hook(lambda grad: print('grad: linear_for_score \n{}'.format(grad[:, 10])))
+  # mbv2
+  fasterRCNN.RCNN_base[-1][0].weight.register_hook(lambda grad: print('grad: last_conv \n{}'.format(grad[:3,:3,:3,:3])))
+  fasterRCNN.RCNN_cls_score.weight.register_hook(lambda grad: print('grad: linear_for_score \n{}'.format(grad[:, 10])))
+  import ipdb; ipdb.set_trace()
 
   lr = cfg.TRAIN.LEARNING_RATE
   lr = args.lr
@@ -417,6 +423,8 @@ if __name__ == '__main__':
               gt_boxes.resize_(data[2].size()).copy_(data[2])
               num_boxes.resize_(data[3].size()).copy_(data[3])
       fasterRCNN.zero_grad()
+      
+      # compute
       rois, cls_prob, bbox_pred, \
       rpn_loss_cls, rpn_loss_box, \
       RCNN_loss_cls, RCNN_loss_bbox, \
@@ -432,7 +440,6 @@ if __name__ == '__main__':
       if args.net.startswith("vgg"):
           clip_gradient(fasterRCNN, 10.)
       optimizer.step()
-
       if step % args.disp_interval == 0:
         end = time.time()
         if step > 0:
