@@ -240,21 +240,25 @@ class coco(imdb):
     ap_default = np.mean(precision[precision > -1])
     print(('~~~~ Mean and per-category AP @ IoU=[{:.2f},{:.2f}] '
            '~~~~').format(IoU_lo_thresh, IoU_hi_thresh))
-    print('{:.1f}'.format(100 * ap_default))
+    print('mAP: {:.1f}'.format(100 * ap_default)) # Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ]
+
     for cls_ind, cls in enumerate(self.classes):
       if cls == '__background__':
         continue
       # minus 1 because of __background__
       precision = coco_eval.eval['precision'][ind_lo:(ind_hi + 1), :, cls_ind - 1, 0, 2]
       ap = np.mean(precision[precision > -1])
-      print('{:.1f}'.format(100 * ap))
+      # print('{} / {:.1f}'.format(self.classes[cls_ind], 100 * ap))
 
-    os.makedirs(Path(result_file).parent, exist_ok=True) 
-    print('~~~~ Summary metrics ~~~~')
-    sys.stdout = open(result_file, 'w')
-    coco_eval.summarize()
-    sys.stdout.close()
-    sys.stdout = sys.__stdout__
+    if result_file:
+      os.makedirs(Path(result_file).parent, exist_ok=True) 
+      print('~~~~ Summary metrics ~~~~')
+      sys.stdout = open(result_file, 'w')
+      coco_eval.summarize()
+      sys.stdout.close()
+      sys.stdout = sys.__stdout__
+      
+    return ap_default
 
   def _do_detection_eval(self, res_file, output_dir, result_file):
     ann_type = 'bbox'
@@ -263,11 +267,12 @@ class coco(imdb):
     coco_eval.params.useSegm = (ann_type == 'segm')
     coco_eval.evaluate()
     coco_eval.accumulate()
-    self._print_detection_eval_metrics(coco_eval, result_file)
+    mAP = self._print_detection_eval_metrics(coco_eval, result_file)
     eval_file = osp.join(output_dir, 'detection_results.pkl')
     with open(eval_file, 'wb') as fid:
       pickle.dump(coco_eval, fid, pickle.HIGHEST_PROTOCOL)
-    print('Wrote COCO eval results to: {}'.format(eval_file))
+    print('Wrote COCO eval results to: {}'.format(eval_file)) # no need 
+    return mAP
 
   def _coco_results_one_category(self, boxes, cat_id):
     results = []
@@ -306,6 +311,7 @@ class coco(imdb):
       json.dump(results, fid)
 
   def evaluate_detections(self, all_boxes, output_dir, result_file):
+    mAP = None
     res_file = osp.join(output_dir, ('detections_' +
                                      self._image_set +
                                      self._year +
@@ -313,13 +319,14 @@ class coco(imdb):
     if self.config['use_salt']:
       res_file += '_{}'.format(str(uuid.uuid4()))
     res_file += '.json'
-    self._write_coco_results_file(all_boxes, res_file)
+    self._write_coco_results_file(all_boxes, res_file) # no need
     # Only do evaluation on non-test sets
     if self._image_set.find('test') == -1:
-      self._do_detection_eval(res_file, output_dir, result_file)
+      mAP = self._do_detection_eval(res_file, output_dir, result_file)
     # Optionally cleanup results json file
     if self.config['cleanup']:
       os.remove(res_file)
+    return mAP
 
   def competition_mode(self, on):
     if on:
