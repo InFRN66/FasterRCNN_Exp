@@ -170,7 +170,7 @@ class sampler(Sampler):
 def val(epoch, fasterRCNN, cfg, imdb_val, dataloader_val):
   print('=== start val in epoch {} ==='.format(epoch))
 
-  # print('forsely insert checkpoint loading == ')
+  # print(' == forcibly insert checkpoint loading == ')
   # load_name = './models/ImgNet_pre/vgg16/coco/train_all/imagenet_0/head_1.pth'
   # print('load {}'.format(load_name))
   # checkpoint = torch.load(load_name)
