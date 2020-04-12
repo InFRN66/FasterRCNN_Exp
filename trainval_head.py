@@ -184,9 +184,9 @@ def val(epoch, fasterRCNN, cfg, imdb_val, dataloader_val):
   all_boxes = [[[] for _ in range(num_images)]
                for _ in range(imdb_val.num_classes)]
 
+  # import ipdb; ipdb.set_trace()
   fasterRCNN.eval()
   empty_array = np.transpose(np.array([[],[],[],[],[]]), (1,0))
-  
 
   for i in range(num_images):
       data = next(data_iter_val)
@@ -462,7 +462,6 @@ if __name__ == '__main__':
   #tr_momentum = cfg.TRAIN.MOMENTUM
   #tr_momentum = args.momentum
 
-
   # fix base weight or not
   if args.head_train_types == 'fixed_base':
     print('=== fix base ===')
@@ -526,14 +525,17 @@ if __name__ == '__main__':
   print("start: {} / max: {}".format(args.start_epoch, args.max_epochs))
   print("iteration per epoch : all images: {} / num batch: {}".format(len(dataset), len(dataloader)))
 
+  # [eval at initial weight]
   mAP = val(-1, fasterRCNN, cfg, imdb_val, dataloader_val) # initial mAP
   if args.use_tfboard:
       info = {
         'val_mAP': mAP,
         }
-      logger.add_scalars("logs_s_{}/val_mAP".format(args.session), info, 0) 
+      logger.add_scalars("logs_s_{}/val_mAP".format(args.session), info, 0)
+    
   for epoch in range(args.start_epoch+1, args.max_epochs+1):
       # setting to train mode
+      # import ipdb; ipdb.set_trace()
       fasterRCNN.train()
       
       loss_temp = 0

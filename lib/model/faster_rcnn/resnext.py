@@ -115,7 +115,7 @@ class resnext(_fasterRCNN):
 
     def set_bn_fix(m):
       classname = m.__class__.__name__
-      if classname.find('BatchNorm') != -1:
+      if classname.find('BatchNorm') != -1: # if batchnorm
         for p in m.parameters(): p.requires_grad=False
 
     # === fix weight
