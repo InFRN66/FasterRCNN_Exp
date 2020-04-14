@@ -156,7 +156,8 @@ class _ProposalLayer(nn.Module):
             output[i,:,0] = i
             output[i,:num_proposal,1:] = proposals_single
 
-        return output
+        import ipdb; ipdb.set_trace()
+        return output # output : (batch, candidates_region, 5=coord+batch_number) // [train]() [test](1,300,5)
 
     def backward(self, top, propagate_down, bottom):
         """This layer does not propagate gradients."""
