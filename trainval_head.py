@@ -118,6 +118,10 @@ def parse_args():
                       help='training session',
                       default=1, type=int)
 
+# set val 
+  parser.add_argument('--val', help='val per training epoch or not', 
+                      action='store_true')
+
 # resume trained model
   parser.add_argument('--r', dest='resume',
                       help='resume checkpoint or not',
@@ -167,8 +171,23 @@ class sampler(Sampler):
     return self.num_data
 
 
-def val(epoch, fasterRCNN, cfg, imdb_val, dataloader_val):
+def val(epoch, fasterRCNN, cfg):
   print('=== start val in epoch {} ==='.format(epoch))
+
+  # [val set]
+  cfg.TRAIN.USE_FLIPPED = False
+  cfg.USE_GPU_NMS = args.cuda
+  imdb_val, roidb_val, ratio_list_val, ratio_index_val = combined_roidb(args.imdbval_name, False)
+  imdb_val.competition_mode(on=True)
+  val_size = len(roidb_val)
+  print('{:d} val roidb entries'.format(len(roidb_val)))
+  cfg.TRAIN.USE_FLIPPED = True # change again for training
+
+  # [val dataset]
+  dataset_val = roibatchLoader(roidb_val, ratio_list_val, ratio_index_val, 1, \
+                               imdb_val.num_classes, training=False, normalize_as_imagenet=True)
+  dataloader_val = torch.utils.data.DataLoader(dataset_val, batch_size=1,
+                                               shuffle=False, num_workers=0, pin_memory=True)
 
   # print(' == forcibly insert checkpoint loading == ')
   # load_name = './models/ImgNet_pre/vgg16/coco/train_all/imagenet_0/head_1.pth'
@@ -271,7 +290,8 @@ def val(epoch, fasterRCNN, cfg, imdb_val, dataloader_val):
 
   print('Evaluating detections')
   mAP = imdb_val.evaluate_detections(all_boxes, output_dir, result_file=None)
-  return mAP
+  del dataset_val, dataloader_val
+  return mAP, fasterRCNN
 
 
 if __name__ == '__main__':
@@ -333,16 +353,16 @@ if __name__ == '__main__':
   train_size = len(roidb)
   print('{:d} train roidb entries'.format(len(roidb)))
 
-  # [val set]
-  cfg.TRAIN.USE_FLIPPED = False
-  cfg.USE_GPU_NMS = args.cuda
-  imdb_val, roidb_val, ratio_list_val, ratio_index_val = combined_roidb(args.imdbval_name, False)
-  imdb_val.competition_mode(on=True)
-  val_size = len(roidb_val)
-  print('{:d} val roidb entries'.format(len(roidb_val)))
-
-
-  cfg.TRAIN.USE_FLIPPED = True # change again for training
+  # if args.val:
+  #   # [val set]
+  #   cfg.TRAIN.USE_FLIPPED = False
+  #   cfg.USE_GPU_NMS = args.cuda
+  #   imdb_val, roidb_val, ratio_list_val, ratio_index_val = combined_roidb(args.imdbval_name, False)
+  #   imdb_val.competition_mode(on=True)
+  #   val_size = len(roidb_val)
+  #   print('{:d} val roidb entries'.format(len(roidb_val)))
+  #   cfg.TRAIN.USE_FLIPPED = True # change again for training
+  
   output_dir = args.save_dir + "/" + args.net + "/" + args.dataset + "/" + args.head_train_types + "/" + "imagenet_{}".format(imagenet_weight_epoch)
   # output_dir = args.save_dir + "/" + args.net + "/" + args.dataset + "/" + 'fixed-base_fixed-top'
   if not os.path.exists(output_dir):
@@ -353,15 +373,15 @@ if __name__ == '__main__':
   dataset = roibatchLoader(roidb, ratio_list, ratio_index, args.batch_size, \
                            imdb.num_classes, training=True, normalize_as_imagenet=True)
   dataloader = torch.utils.data.DataLoader(dataset, batch_size=args.batch_size,
-                            sampler=sampler_batch, num_workers=args.num_workers)
+                            sampler=sampler_batch, num_workers=args.num_workers, pin_memory=True)
 
-  # [for val]
-  dataset_val = roibatchLoader(roidb_val, ratio_list_val, ratio_index_val, 1, \
-                           imdb_val.num_classes, training=False, normalize_as_imagenet=True)
-  dataloader_val = torch.utils.data.DataLoader(dataset_val, batch_size=1,
-                            shuffle=False, num_workers=0, pin_memory=True)
+  # if args.val:
+  #   # [for val]
+  #   dataset_val = roibatchLoader(roidb_val, ratio_list_val, ratio_index_val, 1, \
+  #                           imdb_val.num_classes, training=False, normalize_as_imagenet=True)
+  #   dataloader_val = torch.utils.data.DataLoader(dataset_val, batch_size=1,
+  #                             shuffle=False, num_workers=0, pin_memory=True)
 
-  # import ipdb; ipdb.set_trace()
 
   # initilize the tensor holder here.
   im_data = torch.FloatTensor(1)
@@ -522,20 +542,26 @@ if __name__ == '__main__':
     os.makedirs(tflogdir, exist_ok=True)
     logger = SummaryWriter(tflogdir)
 
+
+
+
+
+
   print("start: {} / max: {}".format(args.start_epoch, args.max_epochs))
   print("iteration per epoch : all images: {} / num batch: {}".format(len(dataset), len(dataloader)))
 
-  # [eval at initial weight]
-  mAP = val(-1, fasterRCNN, cfg, imdb_val, dataloader_val) # initial mAP
-  if args.use_tfboard:
-      info = {
-        'val_mAP': mAP,
-        }
-      logger.add_scalars("logs_s_{}/val_mAP".format(args.session), info, 0)
+  if args.val:
+    # [eval at initial weight]
+    mAP, fasterRCNN = val(-1, fasterRCNN, cfg) # initial mAP
+    if args.use_tfboard:
+        info = {
+          'val_mAP': mAP,
+          }
+        logger.add_scalars("logs_s_{}/val_mAP".format(args.session), info, 0)
     
   for epoch in range(args.start_epoch+1, args.max_epochs+1):
       # setting to train mode
-      # import ipdb; ipdb.set_trace()
+      import ipdb; ipdb.set_trace()
       fasterRCNN.train()
       
       loss_temp = 0
@@ -609,7 +635,8 @@ if __name__ == '__main__':
             logger.add_scalars("logs_s_{}/losses".format(args.session), info, (epoch - 1) * iters_per_epoch + step)
 
           loss_temp = 0
-          start = time.time()                
+          start = time.time()
+
 
       if (epoch) == 1 or (epoch)%args.save_epoch == 0 or (epoch) == args.max_epochs:
         save_name = os.path.join(output_dir, 'head_{}.pth'.format(epoch))
@@ -622,15 +649,16 @@ if __name__ == '__main__':
           'class_agnostic': args.class_agnostic,
         }, save_name)
         print('save model: {}'.format(save_name))
-
-      # [val step]
-      mAP = val(epoch, fasterRCNN, cfg, imdb_val, dataloader_val)
-      print('outside mPA: {}'.format(mAP))
-      if args.use_tfboard:
-          info = {
-            'val_mAP': mAP,
-            }
-          logger.add_scalars("logs_s_{}/val_mAP".format(args.session), info, (epoch) * iters_per_epoch)
+      
+      if args.val:
+        # [val step]
+        mAP, fasterRCNN = val(epoch, fasterRCNN, cfg)
+        print('outside mPA: {}'.format(mAP))
+        if args.use_tfboard:
+            info = {
+              'val_mAP': mAP,
+              }
+            logger.add_scalars("logs_s_{}/val_mAP".format(args.session), info, (epoch) * iters_per_epoch)
 
   if args.use_tfboard:
     logger.close()

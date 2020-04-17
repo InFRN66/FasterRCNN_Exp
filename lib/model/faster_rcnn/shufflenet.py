@@ -61,6 +61,8 @@ def shufflenet_v2_x10(pretrained=False, imagenet_weight=False):
         else:
             print('=== use pytorch default backbone')
             model = models.shufflenet_v2_x1_0(pretrained=True)
+    else:
+        print('=== train from scratch ===')
     return model
 
 
@@ -157,9 +159,9 @@ class shufflenet(_fasterRCNN):
     #         self.RCNN_base.apply(set_bn_eval)
     #         self.RCNN_top.apply(set_bn_eval)
 
-    def _head_to_tail(self, pool5): # [b*256, 612 7, 7] -> [b*256, 4096]
+    def _head_to_tail(self, pool5): # [b*256, 512 7, 7] -> [b*256, 4096]
         # print('head_to_tail: {}'.format(pool5.shape))
-        fc7 = self.RCNN_top(pool5).mean([2,3])
+        fc7 = self.RCNN_top(pool5).mean(3).mean(2)
         # print('fc7: {}'.format(fc7.shape))
         return fc7
 

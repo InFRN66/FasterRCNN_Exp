@@ -41,13 +41,12 @@ class _ProposalLayer(nn.Module):
         # (n, x1, y1, x2, y2) specifying an image batch index n and a
         # rectangle (x1, y1, x2, y2)
         # top[0].reshape(1, 5)
-        #
+        # 
         # # scores blob: holds scores for R regions of interest
         # if len(top) > 1:
         #     top[1].reshape(1, 1, 1, 1)
 
     def forward(self, input):
-
         # Algorithm:
         #
         # for each (H, W) location i
@@ -68,10 +67,11 @@ class _ProposalLayer(nn.Module):
         im_info = input[2]
         cfg_key = input[3]
 
-        pre_nms_topN  = cfg[cfg_key].RPN_PRE_NMS_TOP_N
-        post_nms_topN = cfg[cfg_key].RPN_POST_NMS_TOP_N
-        nms_thresh    = cfg[cfg_key].RPN_NMS_THRESH
-        min_size      = cfg[cfg_key].RPN_MIN_SIZE
+        # [train/test]
+        pre_nms_topN  = cfg[cfg_key].RPN_PRE_NMS_TOP_N # Number of top scoring boxes to keep before apply NMS to RPN proposals [12000/6000]
+        post_nms_topN = cfg[cfg_key].RPN_POST_NMS_TOP_N # # Number of top scoring boxes to keep after applying NMS to RPN proposals [2000/300]
+        nms_thresh    = cfg[cfg_key].RPN_NMS_THRESH # NMS threshold used on RPN proposals [0.7]
+        min_size      = cfg[cfg_key].RPN_MIN_SIZE # Proposal height and width both need to be greater than RPN_MIN_SIZE (at orig image scale) [8/16] 
 
         batch_size = bbox_deltas.size(0)
 
@@ -156,8 +156,7 @@ class _ProposalLayer(nn.Module):
             output[i,:,0] = i
             output[i,:num_proposal,1:] = proposals_single
 
-        import ipdb; ipdb.set_trace()
-        return output # output : (batch, candidates_region, 5=coord+batch_number) // [train]() [test](1,300,5)
+        return output # output : (batch, candidates_region, 5=batch_number+coord) // [train](batch,2000,5) [test](1,300,5)
 
     def backward(self, top, propagate_down, bottom):
         """This layer does not propagate gradients."""

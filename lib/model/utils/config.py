@@ -240,16 +240,6 @@ __C.MOBILENET = edict()
 # Whether to regularize the depth-wise filters during training
 __C.MOBILENET.REGU_DEPTH = False
 
-# Number of fixed layers during training, by default the first of all 14 layers is fixed
-# Range: 0 (none) to 12 (all)
-__C.MOBILENET.FIXED_LAYERS = 5
-
-# Weight decay for the mobilenet weights
-__C.MOBILENET.WEIGHT_DECAY = 0.00004
-
-# Depth multiplier
-__C.MOBILENET.DEPTH_MULTIPLIER = 1.
-
 
 #
 # ShuffleNet options

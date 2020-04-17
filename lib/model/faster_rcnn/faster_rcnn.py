@@ -48,11 +48,12 @@ class _fasterRCNN(nn.Module):
         num_boxes = num_boxes.data
 
         # feed image data to base model to obtain base feature map
-        base_feat = self.RCNN_base(im_data)
+        base_feat = self.RCNN_base(im_data) # shuffle: [16, 464, 19, 29] / vgg16: [16, 512, 37, 75]
         
         # feed base feature map tp RPN to obtain rois
+        # import ipdb; ipdb.set_trace()
         rois, rpn_loss_cls, rpn_loss_bbox = self.RCNN_rpn(base_feat, im_info, gt_boxes, num_boxes)
-
+        
         # if it is training phrase, then use ground trubut bboxes for refining
         if self.training:
             roi_data = self.RCNN_proposal_target(rois, gt_boxes, num_boxes)
@@ -72,12 +73,13 @@ class _fasterRCNN(nn.Module):
 
         rois = Variable(rois)
         # do roi pooling based on predicted rois
-        # print('cfg.POOLING_MODE; ', cfg.POOLING_MODE)
+        # shuffle: base_feat(16,464,19,25) -> pooled_feat(2048,464,7,7) 2048=16*_C.TRAIN.BATCH_SIZE(128)
         if cfg.POOLING_MODE == 'align':
             pooled_feat = self.RCNN_roi_align(base_feat, rois.view(-1, 5))
         elif cfg.POOLING_MODE == 'pool':
             pooled_feat = self.RCNN_roi_pool(base_feat, rois.view(-1,5))
 
+        # import ipdb; ipdb.set_trace()
         # feed pooled features to top model
         pooled_feat = self._head_to_tail(pooled_feat)       
         # compute bbox offset

@@ -29,7 +29,7 @@ model_urls = {
 
 dout_base_model = {
   18: 256,
-  34: 512,
+  34: 256,
   50: 1024,
   101: 1024,
   152: 1024
@@ -327,10 +327,8 @@ class resnet(_fasterRCNN):
     #   if classname.find('BatchNorm') != -1:
     #     for p in m.parameters(): p.requires_grad=False
 
-    # # === fix weight
     # self.RCNN_base.apply(set_bn_fix)
     # self.RCNN_top.apply(set_bn_fix)
-    # # === 
 
   # def train(self, mode=True):
   #   # Override train so that the training mode is set as we want

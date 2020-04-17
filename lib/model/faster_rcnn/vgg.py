@@ -138,9 +138,11 @@ class vgg(_fasterRCNN):
     # not using the last maxpool layer
     self.RCNN_base = nn.Sequential(*list(vgg.features._modules.values())[:-1])
 
-    # Fix the layers before conv3:
-    for layer in range(10):
-      for p in self.RCNN_base[layer].parameters(): p.requires_grad = False
+    # # === fix weight 
+    # # Fix the layers before conv3:
+    # for layer in range(10):
+    #   for p in self.RCNN_base[layer].parameters(): p.requires_grad = False
+    # # === 
 
     self.RCNN_top = vgg.classifier
 
