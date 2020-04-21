@@ -287,6 +287,10 @@ if __name__ == '__main__':
   if args.cuda:
     fasterRCNN.cuda()
 
+  # ===
+  fasterRCNN = nn.DataParallel(fasterRCNN)
+  # ===
+
   start = time.time()
   max_per_image = 100
 
@@ -306,7 +310,7 @@ if __name__ == '__main__':
   dataset = roibatchLoader(roidb, ratio_list, ratio_index, 1, \
                            imdb.num_classes, training=False, normalize=False, normalize_as_imagenet=True)
   dataloader = torch.utils.data.DataLoader(dataset, batch_size=1,
-                            shuffle=False, num_workers=0,
+                            shuffle=False, num_workers=4,
                             pin_memory=True)
 
   data_iter = iter(dataloader)

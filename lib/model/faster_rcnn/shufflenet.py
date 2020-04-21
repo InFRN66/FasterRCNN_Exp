@@ -92,12 +92,18 @@ class shufflenet(_fasterRCNN):
         #   resnet.load_state_dict({k:v for k,v in state_dict.items() if k in resnet.state_dict()})
 
         # Build shufflenet.
+        # self.RCNN_base = nn.Sequential(
+        #     shufflenet.conv1, shufflenet.maxpool,
+        #     shufflenet.stage2, shufflenet.stage3, shufflenet.stage4
+        # )
         self.RCNN_base = nn.Sequential(
             shufflenet.conv1, shufflenet.maxpool,
             shufflenet.stage2, shufflenet.stage3, shufflenet.stage4,
+            shufflenet.conv5
         )
 
-        self.RCNN_top = nn.Sequential(shufflenet.conv5)
+        # self.RCNN_top = nn.Sequential(shufflenet.conv5)
+        self.RCNN_top = nn.Sequential()
 
         self.RCNN_cls_score = nn.Linear(
             dout_top[self.arch], self.n_classes)

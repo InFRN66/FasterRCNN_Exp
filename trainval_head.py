@@ -173,7 +173,7 @@ class sampler(Sampler):
 
 def val(epoch, fasterRCNN, cfg):
   print('=== start val in epoch {} ==='.format(epoch))
-
+  
   # [val set]
   cfg.TRAIN.USE_FLIPPED = False
   cfg.USE_GPU_NMS = args.cuda
@@ -187,7 +187,7 @@ def val(epoch, fasterRCNN, cfg):
   dataset_val = roibatchLoader(roidb_val, ratio_list_val, ratio_index_val, 1, \
                                imdb_val.num_classes, training=False, normalize_as_imagenet=True)
   dataloader_val = torch.utils.data.DataLoader(dataset_val, batch_size=1,
-                                               shuffle=False, num_workers=0, pin_memory=True)
+                                               shuffle=False, num_workers=0)
 
   # print(' == forcibly insert checkpoint loading == ')
   # load_name = './models/ImgNet_pre/vgg16/coco/train_all/imagenet_0/head_1.pth'
@@ -220,6 +220,10 @@ def val(epoch, fasterRCNN, cfg):
       rpn_loss_cls, rpn_loss_box, \
       RCNN_loss_cls, RCNN_loss_bbox, \
       rois_label = fasterRCNN(im_data, im_info, gt_boxes, num_boxes)
+      # rois_val, cls_prob_val, bbox_pred_val, \
+      # rpn_loss_cls_val, rpn_loss_box_val, \
+      # RCNN_loss_cls_val, RCNN_loss_bbox_val, \
+      # rois_label_val = fasterRCNN(im_data, im_info, gt_boxes, num_boxes)
 
       scores = cls_prob.data
       boxes = rois.data[:, :, 1:5]
@@ -291,6 +295,8 @@ def val(epoch, fasterRCNN, cfg):
   print('Evaluating detections')
   mAP = imdb_val.evaluate_detections(all_boxes, output_dir, result_file=None)
   del dataset_val, dataloader_val
+  if args.mGPUs:
+    fasterRCNN = nn.DataParallel(fasterRCNN)
   return mAP, fasterRCNN
 
 
@@ -538,10 +544,9 @@ if __name__ == '__main__':
 
   if args.use_tfboard:
     from tensorboardX import SummaryWriter
-    tflogdir = "logs/{}/{}/{}".format(args.net, args.head_train_types, imagenet_weight_epoch)
+    tflogdir = "tfb_log/{}/{}/{}".format(args.net, args.head_train_types, imagenet_weight_epoch)
     os.makedirs(tflogdir, exist_ok=True)
     logger = SummaryWriter(tflogdir)
-
 
 
 
@@ -561,7 +566,7 @@ if __name__ == '__main__':
     
   for epoch in range(args.start_epoch+1, args.max_epochs+1):
       # setting to train mode
-      import ipdb; ipdb.set_trace()
+      # import ipdb; ipdb.set_trace()
       fasterRCNN.train()
       
       loss_temp = 0
