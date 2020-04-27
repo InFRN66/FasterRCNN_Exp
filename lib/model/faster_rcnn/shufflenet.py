@@ -18,7 +18,7 @@ import pdb
 
 dout_base_model = {
     'x05': 192,
-    'x10': 464
+    'x10': 232
 }
 
 dout_top = {
@@ -92,18 +92,13 @@ class shufflenet(_fasterRCNN):
         #   resnet.load_state_dict({k:v for k,v in state_dict.items() if k in resnet.state_dict()})
 
         # Build shufflenet.
-        # self.RCNN_base = nn.Sequential(
-        #     shufflenet.conv1, shufflenet.maxpool,
-        #     shufflenet.stage2, shufflenet.stage3, shufflenet.stage4
-        # )
         self.RCNN_base = nn.Sequential(
             shufflenet.conv1, shufflenet.maxpool,
-            shufflenet.stage2, shufflenet.stage3, shufflenet.stage4,
-            shufflenet.conv5
+            shufflenet.stage2, shufflenet.stage3,
         )
 
-        # self.RCNN_top = nn.Sequential(shufflenet.conv5)
-        self.RCNN_top = nn.Sequential()
+        self.RCNN_top = nn.Sequential(shufflenet.stage4,
+                                      shufflenet.conv5)
 
         self.RCNN_cls_score = nn.Linear(
             dout_top[self.arch], self.n_classes)
@@ -170,7 +165,6 @@ class shufflenet(_fasterRCNN):
         fc7 = self.RCNN_top(pool5).mean(3).mean(2)
         # print('fc7: {}'.format(fc7.shape))
         return fc7
-
 
 # function to load weight
 def exchange_weightkey_in_state_dict(state_dict):

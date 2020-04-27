@@ -171,9 +171,12 @@ class sampler(Sampler):
     return self.num_data
 
 
-def val(epoch, fasterRCNN, cfg):
+
+
+
+def val_v2(epoch, cfg, save_name):
   print('=== start val in epoch {} ==='.format(epoch))
-  
+
   # [val set]
   cfg.TRAIN.USE_FLIPPED = False
   cfg.USE_GPU_NMS = args.cuda
@@ -298,6 +301,136 @@ def val(epoch, fasterRCNN, cfg):
   if args.mGPUs:
     fasterRCNN = nn.DataParallel(fasterRCNN)
   return mAP, fasterRCNN
+
+
+def val(epoch, fasterRCNN, cfg):
+  print('=== start val in epoch {} ==='.format(epoch))
+
+  # [val set]
+  cfg.TRAIN.USE_FLIPPED = False
+  cfg.USE_GPU_NMS = args.cuda
+  imdb_val, roidb_val, ratio_list_val, ratio_index_val = combined_roidb(args.imdbval_name, False)
+  imdb_val.competition_mode(on=True)
+  val_size = len(roidb_val)
+  print('{:d} val roidb entries'.format(len(roidb_val)))
+  cfg.TRAIN.USE_FLIPPED = True # change again for training
+
+  # [val dataset]
+  dataset_val = roibatchLoader(roidb_val, ratio_list_val, ratio_index_val, 1, \
+                               imdb_val.num_classes, training=False, normalize_as_imagenet=True)
+  dataloader_val = torch.utils.data.DataLoader(dataset_val, batch_size=1,
+                                               shuffle=False, num_workers=0)
+
+  # print(' == forcibly insert checkpoint loading == ')
+  # load_name = './models/ImgNet_pre/vgg16/coco/train_all/imagenet_0/head_1.pth'
+  # print('load {}'.format(load_name))
+  # checkpoint = torch.load(load_name)
+  # fasterRCNN.load_state_dict(checkpoint['model'])
+
+  output_dir = get_output_dir(imdb_val, 'val_in_training')
+  data_iter_val = iter(dataloader_val)
+  num_images = len(imdb_val.image_index)
+  thresh = 0.0
+  max_per_image = 100
+  all_boxes = [[[] for _ in range(num_images)]
+               for _ in range(imdb_val.num_classes)]
+
+  # import ipdb; ipdb.set_trace()
+  fasterRCNN.eval()
+  empty_array = np.transpose(np.array([[],[],[],[],[]]), (1,0))
+
+  for i in range(num_images):
+      data = next(data_iter_val)
+      with torch.no_grad():
+              im_data.resize_(data[0].size()).copy_(data[0])
+              im_info.resize_(data[1].size()).copy_(data[1])
+              gt_boxes.resize_(data[2].size()).copy_(data[2])
+              num_boxes.resize_(data[3].size()).copy_(data[3])
+
+      det_tic = time.time()
+      rois, cls_prob, bbox_pred, \
+      rpn_loss_cls, rpn_loss_box, \
+      RCNN_loss_cls, RCNN_loss_bbox, \
+      rois_label = fasterRCNN(im_data, im_info, gt_boxes, num_boxes)
+      # rois_val, cls_prob_val, bbox_pred_val, \
+      # rpn_loss_cls_val, rpn_loss_box_val, \
+      # RCNN_loss_cls_val, RCNN_loss_bbox_val, \
+      # rois_label_val = fasterRCNN(im_data, im_info, gt_boxes, num_boxes)
+
+      scores = cls_prob.data
+      boxes = rois.data[:, :, 1:5]
+
+      if cfg.TEST.BBOX_REG:
+          # Apply bounding-box regression deltas
+          box_deltas = bbox_pred.data
+          if cfg.TRAIN.BBOX_NORMALIZE_TARGETS_PRECOMPUTED:
+          # Optionally normalize targets by a precomputed mean and stdev
+            if args.class_agnostic:
+                box_deltas = box_deltas.view(-1, 4) * torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_STDS).cuda() \
+                           + torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_MEANS).cuda()
+                box_deltas = box_deltas.view(1, -1, 4)
+            else:
+                box_deltas = box_deltas.view(-1, 4) * torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_STDS).cuda() \
+                           + torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_MEANS).cuda()
+                box_deltas = box_deltas.view(1, -1, 4 * len(imdb.classes))
+
+          pred_boxes = bbox_transform_inv(boxes, box_deltas, 1)
+          pred_boxes = clip_boxes(pred_boxes, im_info.data, 1)
+      else:
+          # Simply repeat the boxes, once for each class
+          pred_boxes = np.tile(boxes, (1, scores.shape[1]))
+
+      pred_boxes /= data[1][0][2].item()
+
+      scores = scores.squeeze()
+      pred_boxes = pred_boxes.squeeze()
+      det_toc = time.time()
+      detect_time = det_toc - det_tic
+      misc_tic = time.time()
+      for j in range(1, imdb.num_classes):
+          inds = torch.nonzero(scores[:,j]>thresh).view(-1)
+          # if there is det
+          if inds.numel() > 0:
+            cls_scores = scores[:,j][inds]
+            _, order = torch.sort(cls_scores, 0, True)
+            if args.class_agnostic:
+              cls_boxes = pred_boxes[inds, :]
+            else:
+              cls_boxes = pred_boxes[inds][:, j * 4:(j + 1) * 4]
+            
+            cls_dets = torch.cat((cls_boxes, cls_scores.unsqueeze(1)), 1)
+            # cls_dets = torch.cat((cls_boxes, cls_scores), 1)
+            cls_dets = cls_dets[order]
+            keep = nms(cls_boxes[order, :], cls_scores[order], cfg.TEST.NMS)
+            cls_dets = cls_dets[keep.view(-1).long()]
+            all_boxes[j][i] = cls_dets.cpu().numpy()
+          else:
+            all_boxes[j][i] = empty_array
+
+      # Limit to max_per_image detections *over all classes*
+      if max_per_image > 0:
+          image_scores = np.hstack([all_boxes[j][i][:, -1]
+                                    for j in range(1, imdb.num_classes)])
+          if len(image_scores) > max_per_image:
+              image_thresh = np.sort(image_scores)[-max_per_image]
+              for j in range(1, imdb.num_classes):
+                  keep = np.where(all_boxes[j][i][:, -1] >= image_thresh)[0]
+                  all_boxes[j][i] = all_boxes[j][i][keep, :]
+
+      misc_toc = time.time()
+      nms_time = misc_toc - misc_tic
+
+      sys.stdout.write('im_detect: {:d}/{:d} {:.3f}s {:.3f}s   \r' \
+          .format(i + 1, num_images, detect_time, nms_time))
+      sys.stdout.flush()
+
+  print('Evaluating detections')
+  mAP = imdb_val.evaluate_detections(all_boxes, output_dir, result_file=None)
+  del dataset_val, dataloader_val
+  if args.mGPUs:
+    fasterRCNN = nn.DataParallel(fasterRCNN)
+  return mAP, fasterRCNN
+
 
 
 if __name__ == '__main__':
@@ -588,6 +721,7 @@ if __name__ == '__main__':
             num_boxes.resize_(data[3].size()).copy_(data[3])
         fasterRCNN.zero_grad()
         
+        # import ipdb; ipdb.set_trace()
         # compute
         rois, cls_prob, bbox_pred, \
         rpn_loss_cls, rpn_loss_box, \
@@ -601,7 +735,8 @@ if __name__ == '__main__':
         # backward
         optimizer.zero_grad()
         loss.backward()
-        if args.net.startswith("vgg"):
+        # if args.net.startswith("vgg"):
+        if args.net.startswith('vgg') or args.net.startswith('shuffle'):
             clip_gradient(fasterRCNN, 10.)
         optimizer.step()
         if step % args.disp_interval == 0:
@@ -629,6 +764,7 @@ if __name__ == '__main__':
           print("\t\t\tfg/bg=(%d/%d), time cost: %f" % (fg_cnt, bg_cnt, end-start))
           print("\t\t\trpn_cls: %.4f, rpn_box: %.4f, rcnn_cls: %.4f, rcnn_box %.4f" \
                         % (loss_rpn_cls, loss_rpn_box, loss_rcnn_cls, loss_rcnn_box))
+                        
           if args.use_tfboard:
             info = {
               'loss': loss_temp,
@@ -658,6 +794,8 @@ if __name__ == '__main__':
       if args.val:
         # [val step]
         mAP, fasterRCNN = val(epoch, fasterRCNN, cfg)
+        # mAP = val_v2(epoch, cfg, save_name)
+
         print('outside mPA: {}'.format(mAP))
         if args.use_tfboard:
             info = {
