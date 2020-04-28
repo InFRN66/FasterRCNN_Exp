@@ -7,8 +7,14 @@ Training and validation for [faster-rcnn](https://arxiv.org/abs/1506.01497).
 - torchvision >= 0.3
 
 Remove 'build', 'faster_rcnn.egg-info' in `lib`, and remove '_C.cpython-~.so' in `lib/model` (if any)
-- `cd lib && python setup.py build develop`
-- `mkdir data && cd data && ln -s [coco_source_dir] coco`
+- `cd lib && python setup.py build develop` # compile
+- `mkdir data && cd data && ln -s [coco_source_dir] coco` # setup for MSCOCO data path
+
+## train model
+run the command below;
+`python trainval_head.py --dataset coco --epochs 20 --nw 8 --cuda --lr 0.01 \n
+--lr_decay_step 6,15 --net vgg16 --bs 16 --disp_interval 500 --head_train_types train_all \n
+--save_epoch 1 --save_dir [path to dir] --use_tfb --mGPUs --val`
 
 ## ImageNet accuracy with pretrained models in pytorch
 Evaluation results for ImageNet validation split. 
