@@ -42,7 +42,7 @@ def squeezenet_10(pretrained=False, imagenet_weight=False):
             model.load_state_dict(state_dict)
         else:
             print('=== use pytorch default backbone')
-            model = models.squeezenet1_0(pretrained=True)
+            mode1l = models.squeezenet1_0(pretrained=True)
     return model
 
 
@@ -89,21 +89,28 @@ class squeezenet(_fasterRCNN):
         #     vgg.load_state_dict({k:v for k,v in state_dict.items() if k in vgg.state_dict()})
 
         # [drop, conv, relu, pool] -> [drop]
-        squeezenet.classifier = nn.Sequential(
-            list(squeezenet.classifier._modules.values())[0]
-        )
+        # squeezenet.classifier = nn.Sequential(
+        #     list(squeezenet.classifier._modules.values())[0]
+        # )
 
         # not using the last maxpool layer
+        # self.RCNN_base = nn.Sequential(
+        #     *list(squeezenet.features._modules.values())
+        # )
         self.RCNN_base = nn.Sequential(
-            *list(squeezenet.features._modules.values())
+            *list(squeezenet.features._modules.values())[:12]
         )
       
-        # Fix the layers [conv, relu, pool]:
-        for layer in range(3):
-            for p in self.RCNN_base[layer].parameters():
-                p.requires_grad = False
+        # # Fix the layers [conv, relu, pool]:
+        # for layer in range(3):
+        #     for p in self.RCNN_base[layer].parameters():
+        #         p.requires_grad = False
 
-        self.RCNN_top = squeezenet.classifier
+        # self.RCNN_top = squeezenet.classifier # apply just classifier part
+        # self.RCNN_top = nn.Sequential() # pass through
+        self.RCNN_top = nn.Sequential(
+            *list(squeezenet.features._modules.values())[12:]
+        )
 
         # not using the last maxpool layer
         self.RCNN_cls_score = nn.Linear(dout_top[self.ver], self.n_classes)
@@ -114,10 +121,7 @@ class squeezenet(_fasterRCNN):
 
     def _head_to_tail(self, pool5):
         # print('head_to_tail: {}'.format(pool5.shape))
-        fc7 = self.RCNN_top(pool5)
-        # # --- follow original net, relu+avgpool
-        # fc7 = F.adaptive_avg_pool2d(F.relu(fc7), 1).mean(3).mean(2)
-        fc7 = fc7.mean(3).mean(2)
+        fc7 = self.RCNN_top(pool5).mean(3).mean(2)
         # print('fc7: {}'.format(fc7.shape))
         return fc7
 

@@ -598,8 +598,8 @@ if __name__ == '__main__':
         # backward
         optimizer.zero_grad()
         loss.backward()
-        # if args.net.startswith("vgg"):
-        if args.net.startswith('vgg') or args.net.startswith('shuffle'):
+        if args.net.startswith("vgg"):
+        # if args.net.startswith('vgg') or args.net.startswith('shuffle') or args.net.startswith('squeeze'):
             clip_gradient(fasterRCNN, 10.)
         optimizer.step()
         if step % args.disp_interval == 0:

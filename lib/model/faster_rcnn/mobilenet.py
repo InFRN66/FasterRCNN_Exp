@@ -18,8 +18,13 @@ import torch.utils.model_zoo as model_zoo
 from model.faster_rcnn.faster_rcnn import _fasterRCNN
 import pdb
 
-
 dout_base_model = {
+    'v1': None,
+    'v2': 96,
+    'v3': None
+}
+
+dout_top = {
     'v1': None,
     'v2': 1280,
     'v3': None,
@@ -134,30 +139,26 @@ class mobilenet(_fasterRCNN):
         #     state_dict = torch.load(self.model_path)
         #     mbnet.load_state_dict({k:v for k,v in state_dict.items() if k in mbnet.state_dict()})
 
-        mbnet.classifier = nn.Sequential(
-            *list(mbnet.classifier._modules.values())[:-1])  # only Dropout
-
         # not using the last maxpool layer
-        self.RCNN_base = nn.Sequential(*list(mbnet.features._modules.values()))
+        self.RCNN_base = nn.Sequential(*list(mbnet.features._modules.values())[:14])
 
         # # Fix some conv layers:
         # for layer in range(3):
         #   for p in self.RCNN_base[layer].parameters(): p.requires_grad = False
 
-        self.RCNN_top = mbnet.classifier
+        self.RCNN_top = nn.Sequential(*list(mbnet.features._modules.values())[14:])
 
         # not using the last maxpool layer
-        self.RCNN_cls_score = nn.Linear(self.dout_base_model, self.n_classes)
+        self.RCNN_cls_score = nn.Linear(dout_top[self.version], self.n_classes)
         if self.class_agnostic:
-            self.RCNN_bbox_pred = nn.Linear(self.dout_base_model, 4)
+            self.RCNN_bbox_pred = nn.Linear(dout_top[self.version], 4)
         else:
             self.RCNN_bbox_pred = nn.Linear(
-                self.dout_base_model, 4*self.n_classes)
+                dout_top[self.version], 4*self.n_classes)
 
-    def _head_to_tail(self, pool5):  # [b*256, 1280, 7, 7] -> [b*256, 1280]
+    def _head_to_tail(self, pool5):
         # print('head_to_tail: {}'.format(pool5.shape))
-        pool5_flat = pool5.mean(3).mean(2)
-        fc7 = self.RCNN_top(pool5_flat)
+        fc7 = self.RCNN_top(pool5).mean(3).mean(2)
         # print('fc7: {}'.format(fc7.shape))
         return fc7
 
