@@ -12,8 +12,9 @@ Remove 'build', 'faster_rcnn.egg-info' in `lib`, and remove '_C.cpython-~.so' in
 
 ## train model
 run the command below;
-`python trainval_head.py --dataset coco --epochs 20 --nw 8 --cuda --lr 0.01 \n
---lr_decay_step 6,15 --net vgg16 --bs 16 --disp_interval 500 --head_train_types train_all \n
+
+`python trainval_head.py --dataset coco --epochs 20 --nw 8 --cuda --lr 0.01
+--lr_decay_step 6,15 --net vgg16 --bs 16 --disp_interval 500 --head_train_types train_all
 --save_epoch 1 --save_dir [path to dir] --use_tfb --mGPUs --val`
 
 ## ImageNet accuracy with pretrained models in pytorch
