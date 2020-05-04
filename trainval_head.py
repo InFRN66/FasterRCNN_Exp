@@ -150,6 +150,8 @@ def parse_args():
   parser.add_argument('--use_tfb', dest='use_tfboard',
                       help='whether use tensorboard',
                       action='store_true')
+  parser.add_argument('--tfb_dir', dest='tfb_dir', help='directory to save tensorboard result', default='tfb_log',
+                      type=str)
   parser.add_argument('--head_train_types', dest='head_train_types', help='train_all, fixed_base, fixed_base_top', 
                       default=None)
   args = parser.parse_args()
@@ -560,7 +562,8 @@ if __name__ == '__main__':
 
   if args.use_tfboard:
     from tensorboardX import SummaryWriter
-    tflogdir = "tfb_log/{}/{}/{}".format(args.net, args.head_train_types, imagenet_weight_epoch)
+    # tflogdir = "{}/{}/{}/{}".format(args.tfb_dir, args.net, args.head_train_types, imagenet_weight_epoch)
+    tflogdir = os.path.join(args.tfb_dir, args.net, str(args.head_train_types), str(imagenet_weight_epoch))
     os.makedirs(tflogdir, exist_ok=True)
     logger = SummaryWriter(tflogdir)
 
