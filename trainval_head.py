@@ -42,11 +42,16 @@ from model.faster_rcnn.resnext import resnext
 from model.faster_rcnn.mobilenet import mobilenet
 from model.faster_rcnn.shufflenet import shufflenet
 from model.faster_rcnn.squeezenet import squeezenet
+from model.faster_rcnn.wide_resnet import wide_resnet
 
 
-def to_list(argument):
+def to_int_list(argument):
     f = lambda x: x.split(",")
     return list(map(int, f(argument)))
+  
+def to_str_list(argument):
+    f = lambda x: x.split(",")
+    return list(map(str, f(argument)))
 
 def parse_args():
   """Parse input arguments
@@ -108,7 +113,7 @@ def parse_args():
                       default=0.001, type=float)
   parser.add_argument('--lr_decay_step', dest='lr_decay_step',
                       help='step to do learning rate decay, unit is epoch',
-                      default=5, type=to_list)
+                      default=5, type=to_int_list)
   parser.add_argument('--lr_decay_gamma', dest='lr_decay_gamma',
                       help='learning rate decay ratio',
                       default=0.1, type=float)
@@ -121,6 +126,12 @@ def parse_args():
 # set val 
   parser.add_argument('--val', help='val per training epoch or not', 
                       action='store_true')
+
+# set padding for conv layer
+  parser.add_argument('--pad', help='padding mode for convolution layer', 
+                      default=None, type=str)
+  parser.add_argument('--pad_blocks', help='blocks to apply padding option',
+                      default=None, type=to_str_list)
 
 # resume trained model
   parser.add_argument('--r', dest='resume',
@@ -463,12 +474,21 @@ if __name__ == '__main__':
   elif args.net == 'squeezenet_11':
     fasterRCNN = squeezenet(imdb.classes, '11', pretrained=pretrained, class_agnostic=args.class_agnostic, imagenet_weight=args.imagenet_weight)
 
+  elif args.net == 'wide_resnet50':
+    fasterRCNN = wide_resnet(imdb.classes, 50, pretrained=pretrained, class_agnostic=args.class_agnostic, imagenet_weight=args.imagenet_weight)
+  elif args.net == 'wide_resnet101':
+    fasterRCNN = wide_resnet(imdb.classes, 101, pretrained=pretrained, class_agnostic=args.class_agnostic, imagenet_weight=args.imagenet_weight)
+
 
   else:
     print("network is not defined")
     pdb.set_trace()
 
   fasterRCNN.create_architecture()
+  # import ipdb; ipdb.set_trace()
+
+  if args.pad and len(args.pad_blocks)>0:
+    fasterRCNN.set_conv_pad(args.pad, args.pad_blocks)
 
   # [check gradient]
   # # vgg16

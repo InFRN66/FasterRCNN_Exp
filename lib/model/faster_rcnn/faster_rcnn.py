@@ -133,3 +133,35 @@ class _fasterRCNN(nn.Module):
     def create_architecture(self):
         self._init_modules()
         self._init_weights()
+
+    def set_conv_pad(self, pad_mode, blocks=['RCNN_base']):
+        '''
+        replace zeros padding (default) with any padding
+        
+        candidates of blocks = 
+        {
+            'RCNN_rpn',
+            'RCNN_proposal_target', 
+            'RCNN_roi_pool',
+            'RCNN_roi_align',
+            'RCNN_base',
+            'RCNN_top', 
+            'RCNN_cls_score',
+            'RCNN_bbox_pred',
+        }
+        '''
+        # import ipdb; ipdb.set_trace()
+        def _apply_padding(m):
+            class_name = m.__class__.__name__
+            if class_name.find('Conv2d') != -1:
+                m.padding_mode = pad_mode
+
+        if 'RCNN_base' in blocks:
+            print('=== apply {} padding to RCNN_base ==='.format(pad_mode))
+            self.RCNN_base.apply(_apply_padding)
+        if 'RCNN_top' in blocks:
+            print('=== apply {} padding to RCNN_top ==='.format(pad_mode))
+            self.RCNN_top.apply(_apply_padding)
+        if 'RCNN_rpn' in blocks:
+            print('=== apply {} padding to RCNN_rpn ==='.format(pad_mode))
+            self.RCNN_rpn.apply(_apply_padding)        

@@ -19,7 +19,7 @@ from model.faster_rcnn.faster_rcnn import _fasterRCNN
 import pdb
 
 dout_base_model = {
-  '10': 512,
+  '10': 384,
   '11': 512,
 }
 
@@ -98,7 +98,7 @@ class squeezenet(_fasterRCNN):
         #     *list(squeezenet.features._modules.values())
         # )
         self.RCNN_base = nn.Sequential(
-            *list(squeezenet.features._modules.values())[:12]
+            *list(squeezenet.features._modules.values())[:10]
         )
       
         # # Fix the layers [conv, relu, pool]:
@@ -109,7 +109,7 @@ class squeezenet(_fasterRCNN):
         # self.RCNN_top = squeezenet.classifier # apply just classifier part
         # self.RCNN_top = nn.Sequential() # pass through
         self.RCNN_top = nn.Sequential(
-            *list(squeezenet.features._modules.values())[12:]
+            *list(squeezenet.features._modules.values())[10:]
         )
 
         # not using the last maxpool layer

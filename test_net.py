@@ -40,6 +40,8 @@ from model.faster_rcnn.resnext import resnext
 from model.faster_rcnn.mobilenet import mobilenet
 from model.faster_rcnn.shufflenet import shufflenet
 from model.faster_rcnn.squeezenet import squeezenet
+from model.faster_rcnn.wide_resnet import wide_resnet
+
 
 def parse_args():
   """
@@ -247,6 +249,11 @@ if __name__ == '__main__':
     fasterRCNN = squeezenet(imdb.classes, '10', pretrained=pretrained, class_agnostic=args.class_agnostic)
   elif args.net == 'squeezenet_11':
     fasterRCNN = squeezenet(imdb.classes, '11', pretrained=pretrained, class_agnostic=args.class_agnostic)
+  
+  elif args.net == 'wide_resnet50':
+    fasterRCNN = wide_resnet(imdb.classes, 50, pretrained=pretrained, class_agnostic=args.class_agnostic)
+  elif args.net == 'wide_resnet101':
+    fasterRCNN = wide_resnet(imdb.classes, 101, pretrained=pretrained, class_agnostic=args.class_agnostic)
 
   else:
     print("network is not defined")

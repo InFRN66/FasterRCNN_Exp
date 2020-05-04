@@ -13,24 +13,34 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 import math
 import torch.utils.model_zoo as model_zoo
+from torchvision import models
 import pdb
 
-from torchvision import models
+__all__ = ['WideResNet', 'wide_resnet50', 'wide_resnet101']
 
-__all__ = ['resnext50_32x4d', 'resnext101_32x8d']
+
+model_urls = {
+  'wide_resnet50': 'https://download.pytorch.org/models/wide_resnet50_2-95faca4d.pth',
+  'wide_resnet101': 'https://download.pytorch.org/models/wide_resnet101_2-32ee1156.pth',
+}
 
 dout_base_model = {
   50: 1024,
   101: 1024,
 }
 
-def resnext50(pretrained=False, imagenet_weight=False):
-  """Constructs a ResNext-50_32x4d model.
+dout_top = {
+  50:  2048,
+  101: 2048,
+}
+
+def wide_resnet50(pretrained=False, imagenet_weight=False):
+  """Constructs a Wide_ResNet-50 model.
   Args:
     pretrained (bool): If True, returns a model pre-trained on ImageNet
   """
-  print('=== Using resnext 50_32x4d ===')
-  model = models.resnext50_32x4d()
+  print('=== Using wide_resnet 50 ===')
+  model = models.wide_resnet50_2()
   if pretrained:
     if imagenet_weight:
       print('=== use {} as backbone'.format(imagenet_weight))
@@ -39,17 +49,17 @@ def resnext50(pretrained=False, imagenet_weight=False):
       model.load_state_dict(state_dict)
     else:
       print('=== use pytorch default backbone')
-      model = models.resnext50_32x4d(pretrained=True)
+      model = models.wide_resnet50_2(pretrained=True)
   return model
 
 
-def resnext101(pretrained=False, imagenet_weight=False):
-  """Constructs a ResNext-101_32x8d model.
+def wide_resnet101(pretrained=False, imagenet_weight=False):
+  """Constructs a Wide_ResNet-101 model.
   Args:
     pretrained (bool): If True, returns a model pre-trained on ImageNet
   """
-  print('=== Using resnext 101_32x8d ===')
-  model = models.resnext101_32x8d()
+  print('=== Using wide_resnet 101 ===')
+  model = models.wide_resnet101_2()
   if pretrained:
     if imagenet_weight:
       print('=== use {} as backbone'.format(imagenet_weight))
@@ -58,12 +68,13 @@ def resnext101(pretrained=False, imagenet_weight=False):
       model.load_state_dict(state_dict)
     else:
       print('=== use pytorch default backbone')
-      model = models.resnext101_32x8d(pretrained=True)
+      model = models.wide_resnet101_2(pretrained=True)
   return model
 
 
-class resnext(_fasterRCNN):
+class wide_resnet(_fasterRCNN):
   def __init__(self, classes, num_layers=101, pretrained=False, class_agnostic=False, imagenet_weight=None):
+    # self.model_path = 'data/pretrained_model/resnet101_caffe.pth'
     self.dout_base_model = dout_base_model[num_layers]
     self.pretrained = pretrained
     self.class_agnostic = class_agnostic
@@ -74,28 +85,28 @@ class resnext(_fasterRCNN):
 
   def _init_modules(self):
     if self.num_layers == 50:
-      resnext = resnext50(self.pretrained, self.imagenet_weight)
+      wide_resnet = wide_resnet50(self.pretrained, self.imagenet_weight)
     elif self.num_layers == 101:
-      resnext = resnext101(self.pretrained, self.imagenet_weight)
+      wide_resnet = wide_resnet101(self.pretrained, self.imagenet_weight)
     else:
       raise ValueError('layers should be in [50, 101].')
 
     # if self.pretrained == True:
     #   print("Loading pretrained weights from %s" %(self.model_path))
     #   state_dict = torch.load(self.model_path)
-    #   resnet.load_state_dict({k:v for k,v in state_dict.items() if k in resnet.state_dict()})
+    #   wide_resnet.load_state_dict({k:v for k,v in state_dict.items() if k in wide_resnet.state_dict()})
 
-    # Build resnext.
-    self.RCNN_base = nn.Sequential(resnext.conv1, resnext.bn1, resnext.relu,
-      resnext.maxpool, resnext.layer1, resnext.layer2, resnext.layer3) # until layer3
+    # Build wide_resnet.
+    self.RCNN_base = nn.Sequential(wide_resnet.conv1, wide_resnet.bn1, wide_resnet.relu,
+      wide_resnet.maxpool, wide_resnet.layer1, wide_resnet.layer2, wide_resnet.layer3) # until layer3
 
-    self.RCNN_top = nn.Sequential(resnext.layer4) # layer4
+    self.RCNN_top = nn.Sequential(wide_resnet.layer4) # layer4
 
-    self.RCNN_cls_score = nn.Linear(dout_base_model[self.num_layers]*2, self.n_classes)
+    self.RCNN_cls_score = nn.Linear(dout_top[self.num_layers], self.n_classes)
     if self.class_agnostic:
-      self.RCNN_bbox_pred = nn.Linear(dout_base_model[self.num_layers]*2, 4)
+      self.RCNN_bbox_pred = nn.Linear(dout_top[self.num_layers], 4)
     else:
-      self.RCNN_bbox_pred = nn.Linear(dout_base_model[self.num_layers]*2, 4*self.n_classes)
+      self.RCNN_bbox_pred = nn.Linear(dout_top[self.num_layers], 4*self.n_classes)
 
     # # === fix weight
     # # Fix blocks
@@ -114,13 +125,11 @@ class resnext(_fasterRCNN):
 
     # def set_bn_fix(m):
     #   classname = m.__class__.__name__
-    #   if classname.find('BatchNorm') != -1: # if batchnorm
+    #   if classname.find('BatchNorm') != -1:
     #     for p in m.parameters(): p.requires_grad=False
 
-    # # === fix weight
     # self.RCNN_base.apply(set_bn_fix)
     # self.RCNN_top.apply(set_bn_fix)
-    # # === 
 
   # def train(self, mode=True):
   #   # Override train so that the training mode is set as we want
@@ -145,6 +154,7 @@ class resnext(_fasterRCNN):
     fc7 = self.RCNN_top(pool5).mean(3).mean(2) # pool5(feature)にRCNN_TOPかけてmean(3).mean(2)
     # print('fc7: {}'.format(fc7.shape))
     return fc7
+
 
 # function to load weight
 def exchange_weightkey_in_state_dict(state_dict):

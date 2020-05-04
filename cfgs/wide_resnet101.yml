@@ -1,4 +1,4 @@
-EXP_DIR: se_resnet101
+EXP_DIR: wide_resnet101
 TRAIN:
   HAS_RPN: True
   BBOX_NORMALIZE_TARGETS_PRECOMPUTED: True
