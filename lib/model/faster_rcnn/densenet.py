@@ -31,10 +31,16 @@ torchvision.models: features.denseblock4.denselayer14.norm2.weight
 '''
 
 dout_base_model = {
-  121: [512, 1024],
-  161: [1056, 2208],
-  169: [640, 1664],
-  201: [896, 1920]
+  121: 1024, # 
+  169: 1280, # 
+  201: 1792, # 
+}
+
+dout_top = {
+  121: 1024, #
+  169: 1664, # 
+  201: 1920, # 
+
 }
 
 def densenet121(pretrained=False, imagenet_weight=False):
@@ -115,7 +121,7 @@ def densenet201(pretrained=False, imagenet_weight=False):
 
 class densenet(_fasterRCNN):
   def __init__(self, classes, num_layers=169, pretrained=False, class_agnostic=False, imagenet_weight=None):
-    self.dout_base_model = dout_base_model[num_layers][0] # depth of RCNN_base output. pattern1=1280 / pattern2=640 (in dense169) 
+    self.dout_base_model = dout_base_model[num_layers] # depth of RCNN_base output. pattern1=1280 / pattern2=640 (in dense169) 
     self.pretrained = pretrained
     self.class_agnostic = class_agnostic
     self.num_layers = num_layers
@@ -153,24 +159,29 @@ class densenet(_fasterRCNN):
     #   densenet.features.norm5, # [1,1664,8,8]
     # )
 
-    # pattern2 : back = ~transition3 / top = denseblock4~
-    self.RCNN_base = nn.Sequential(
-      densenet.features.conv0, densenet.features.norm0, densenet.features.relu0, densenet.features.pool0, 
-      densenet.features.denseblock1, densenet.features.transition1,
-      densenet.features.denseblock2, densenet.features.transition2,
-      densenet.features.denseblock3, densenet.features.transition3, # [1,640,8,8]
-    )
-    self.RCNN_top = nn.Sequential(
-      densenet.features.denseblock4,
-      densenet.features.norm5, # [1,1664,8,8]
-    )
+    # # pattern2 : back = ~transition3 / top = denseblock4~
+    # self.RCNN_base = nn.Sequential(
+    #   densenet.features.conv0, densenet.features.norm0, densenet.features.relu0, densenet.features.pool0, 
+    #   densenet.features.denseblock1, densenet.features.transition1,
+    #   densenet.features.denseblock2, densenet.features.transition2,
+    #   densenet.features.denseblock3, densenet.features.transition3, # [1,640,8,8]
+    # )
+    # self.RCNN_top = nn.Sequential(
+    #   densenet.features.denseblock4,
+    #   densenet.features.norm5, # [1,1664,8,8]
+    # )
+
+
+    # pattern3 : back = ~transition3 / top = denseblock4~
+    self.RCNN_base = densenet.features[:9]
+    self.RCNN_top = densenet.features[9:]
     # ===
 
-    self.RCNN_cls_score = nn.Linear(dout_base_model[self.num_layers][1], self.n_classes)
+    self.RCNN_cls_score = nn.Linear(dout_top[self.num_layers], self.n_classes)
     if self.class_agnostic:
-      self.RCNN_bbox_pred = nn.Linear(dout_base_model[self.num_layers][1], 4)
+      self.RCNN_bbox_pred = nn.Linear(dout_top[self.num_layers], 4)
     else:
-      self.RCNN_bbox_pred = nn.Linear(dout_base_model[self.num_layers][1], 4*self.n_classes)
+      self.RCNN_bbox_pred = nn.Linear(dout_top[self.num_layers], 4*self.n_classes)
 
     # # === fix weight
     # # Fix blocks
@@ -220,8 +231,8 @@ class densenet(_fasterRCNN):
 
   def _head_to_tail(self, pool5):
     fc7 = self.RCNN_top(pool5) # [1,1664]
-    fc7 = F.relu(fc7, inplace=True)
-    fc7 = F.adaptive_avg_pool2d(fc7, (1,1))
+    fc7 = F.relu(fc7, inplace=True) # relu 
+    fc7 = F.adaptive_avg_pool2d(fc7, (1,1)) # avgpool
     fc7 = torch.flatten(fc7, 1)
     return fc7
 

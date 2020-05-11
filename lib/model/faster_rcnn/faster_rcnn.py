@@ -51,7 +51,6 @@ class _fasterRCNN(nn.Module):
         base_feat = self.RCNN_base(im_data) # shuffle: [16, 464, 19, 29] / vgg16: [16, 512, 37, 75]
         
         # feed base feature map tp RPN to obtain rois
-        # import ipdb; ipdb.set_trace()
         rois, rpn_loss_cls, rpn_loss_bbox = self.RCNN_rpn(base_feat, im_info, gt_boxes, num_boxes)
         
         # if it is training phrase, then use ground trubut bboxes for refining
@@ -134,34 +133,35 @@ class _fasterRCNN(nn.Module):
         self._init_modules()
         self._init_weights()
 
-    def set_conv_pad(self, pad_mode, blocks=['RCNN_base']):
-        '''
-        replace zeros padding (default) with any padding
-        
-        candidates of blocks = 
-        {
-            'RCNN_rpn',
-            'RCNN_proposal_target', 
-            'RCNN_roi_pool',
-            'RCNN_roi_align',
-            'RCNN_base',
-            'RCNN_top', 
-            'RCNN_cls_score',
-            'RCNN_bbox_pred',
-        }
-        '''
-        # import ipdb; ipdb.set_trace()
-        def _apply_padding(m):
-            class_name = m.__class__.__name__
-            if class_name.find('Conv2d') != -1:
-                m.padding_mode = pad_mode
 
-        if 'RCNN_base' in blocks:
-            print('=== apply {} padding to RCNN_base ==='.format(pad_mode))
-            self.RCNN_base.apply(_apply_padding)
-        if 'RCNN_top' in blocks:
-            print('=== apply {} padding to RCNN_top ==='.format(pad_mode))
-            self.RCNN_top.apply(_apply_padding)
-        if 'RCNN_rpn' in blocks:
-            print('=== apply {} padding to RCNN_rpn ==='.format(pad_mode))
-            self.RCNN_rpn.apply(_apply_padding)        
+def _replace_module(module):
+    '''function to replace padding method in convolution with another
+    module: any modules, e.g., net, nn.sequntial,...
+    '''
+    for sub_n, sub_m in module._modules.items():
+        cl_str = str(sub_m.__class__)
+        print('cl_str', sub_m)
+        
+        if_bias = lambda x: True if (x is not None) else (False)
+        if cl_str.find('Sequential')!=-1 or cl_str.find('torch.nn.modules')==-1:
+            _replace_module(sub_m)
+        else:
+            if cl_str.find('torch.nn.modules.conv.Conv2d')!=-1 and sub_m.padding[0]>=1:
+                print('replace padding')
+                pad_func = nn.ReflectionPad2d(sub_m.padding[0])
+                new_sub_m = nn.Sequential(
+                    pad_func,
+                    nn.Conv2d(
+                        in_channels=sub_m.in_channels, out_channels=sub_m.out_channels,
+                        kernel_size=sub_m.kernel_size, stride=sub_m.stride,
+                        padding=(0,0), dilation=sub_m.dilation, groups=sub_m.groups,
+                        bias=if_bias(sub_m.bias),
+                    ),
+                )
+                new_sub_m[1].weight = sub_m.weight
+                if if_bias(sub_m.bias):
+                    new_sub_m[1].bias = sub_m.bias
+                module._modules[sub_n] = new_sub_m
+            else:
+                continue
+    return module

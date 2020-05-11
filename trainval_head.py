@@ -44,6 +44,8 @@ from model.faster_rcnn.shufflenet import shufflenet
 from model.faster_rcnn.squeezenet import squeezenet
 from model.faster_rcnn.wide_resnet import wide_resnet
 
+from model.faster_rcnn.faster_rcnn import _replace_module
+
 
 def to_int_list(argument):
     f = lambda x: x.split(",")
@@ -129,7 +131,7 @@ def parse_args():
 
 # set padding for conv layer
   parser.add_argument('--pad', help='padding mode for convolution layer', 
-                      default=None, type=str)
+                      action='store_true')
   parser.add_argument('--pad_blocks', help='blocks to apply padding option',
                       default=None, type=to_str_list)
 
@@ -367,16 +369,6 @@ if __name__ == '__main__':
   imdb, roidb, ratio_list, ratio_index = combined_roidb(args.imdb_name)
   train_size = len(roidb)
   print('{:d} train roidb entries'.format(len(roidb)))
-
-  # if args.val:
-  #   # [val set]
-  #   cfg.TRAIN.USE_FLIPPED = False
-  #   cfg.USE_GPU_NMS = args.cuda
-  #   imdb_val, roidb_val, ratio_list_val, ratio_index_val = combined_roidb(args.imdbval_name, False)
-  #   imdb_val.competition_mode(on=True)
-  #   val_size = len(roidb_val)
-  #   print('{:d} val roidb entries'.format(len(roidb_val)))
-  #   cfg.TRAIN.USE_FLIPPED = True # change again for training
   
   output_dir = args.save_dir + "/" + args.net + "/" + args.dataset + "/" + args.head_train_types + "/" + "imagenet_{}".format(imagenet_weight_epoch)
   # output_dir = args.save_dir + "/" + args.net + "/" + args.dataset + "/" + 'fixed-base_fixed-top'
@@ -389,14 +381,6 @@ if __name__ == '__main__':
                            imdb.num_classes, training=True, normalize_as_imagenet=True)
   dataloader = torch.utils.data.DataLoader(dataset, batch_size=args.batch_size,
                             sampler=sampler_batch, num_workers=args.num_workers, pin_memory=True)
-
-  # if args.val:
-  #   # [for val]
-  #   dataset_val = roibatchLoader(roidb_val, ratio_list_val, ratio_index_val, 1, \
-  #                           imdb_val.num_classes, training=False, normalize_as_imagenet=True)
-  #   dataloader_val = torch.utils.data.DataLoader(dataset_val, batch_size=1,
-  #                             shuffle=False, num_workers=0, pin_memory=True)
-
 
   # initilize the tensor holder here.
   im_data = torch.FloatTensor(1)
@@ -481,16 +465,22 @@ if __name__ == '__main__':
   elif args.net == 'wide_resnet101':
     fasterRCNN = wide_resnet(imdb.classes, 101, pretrained=pretrained, class_agnostic=args.class_agnostic, imagenet_weight=args.imagenet_weight)
 
-
   else:
     print("network is not defined")
     pdb.set_trace()
 
   fasterRCNN.create_architecture()
-  # import ipdb; ipdb.set_trace()
 
   if args.pad and len(args.pad_blocks)>0:
-    fasterRCNN.set_conv_pad(args.pad, args.pad_blocks)
+    # reflection padding
+    if 'RCNN_base' in args.pad_blocks:
+      _replace_module(fasterRCNN.RCNN_base)
+    if 'RCNN_top' in args.pad_blocks:
+      _replace_module(fasterRCNN.RCNN_top)
+    if 'RCNN_rpn' in args.pad_blocks:
+      _replace_module(fasterRCNN.RCNN_rpn)
+
+  # import ipdb; ipdb.set_trace()
 
   # [check gradient]
   # # vgg16
